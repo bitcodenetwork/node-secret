@@ -1,110 +1,229 @@
-import { createCipheriv, createDecipheriv, createHash, randomBytes, scryptSync } from "crypto";
-
-type Constructor = {
-  algorithm?: "sha256" | "sha512";
-  secret?: string;
-  secretIV?: string;
-}
+import {
+  createCipheriv,
+  createDecipheriv,
+  createHash,
+  randomBytes,
+  scryptSync
+} from "crypto";
 
 class Secret {
-  constructor(params?: Constructor) {
+  constructor() { }
 
-    const { algorithm, secret, secretIV } = params || {};
+  private static randomKey = randomBytes(5).toString("hex");
 
-    const defaultSecret = randomBytes(5).toString("hex");
-    const defaultSecretIV = randomBytes(5).toString("hex");
+  private static createIV(algorithmParam: "sha256" | "sha512", secretParam: string, secretIVParam: string) {
+    const algorithm = algorithmParam;
+    const secret = secretParam;
+    const secretIV = secretIVParam;
 
-    this.algorithm = algorithm || process.env.CRYPTO_ALGORITHM || "sha256";
-    this.secret = secret || process.env.CRYPTO_SECRET || defaultSecret;
-    this.secretIV = secretIV || process.env.CRYPTO_SECRET_IV || defaultSecretIV;
+    const key: Buffer = createHash(algorithm).update(secret).digest();
+    const iv: Buffer = Buffer.allocUnsafe(16);
+    const encryptionIV: Buffer = createHash(algorithm).update(secretIV).digest();
+
+    encryptionIV.copy(iv);
+
+    return { key, iv };
   }
 
-  private algorithm;
+  /**
+   * Encrypt
+   * -------
+   * encrypt data using crypto, for more complete information please visit the documentation page.
+   * 
+   * https://github.com/bitcodenetwork/secret
+   * 
+   * @param data data to encrypt
+   * @param options setting options for encryption: algorithm, secret, secretIV
+   * @returns encrypted data or null
+   */
 
-  private secret;
-
-  private secretIV;
-
-  private key(): Buffer {
-    return createHash(this.algorithm).update(this.secret).digest();
-  }
-
-  private encryptionIV(): Buffer {
-    return createHash(this.algorithm).update(this.secretIV).digest();
-  }
-
-  private resizedIV(): Buffer {
-    return Buffer.allocUnsafe(16);
-  }
-
-  public encrypt(data: string): string | null {
+  public static encrypt(data: string, options?: { algorithm?: "sha256" | "sha512", secret?: string, secretIV?: string }): string | null {
     try {
-
       if (!data || data == 'null' || data == 'undefined') return null;
 
-      const key: Buffer = this.key();
-      const resizedIV: Buffer = this.resizedIV()
-      const encryptionIV: Buffer = this.encryptionIV();
+      const algorithm: "sha256" | "sha512" | null = options?.algorithm || "sha256";
+      const secret: string | undefined = options?.secret || process.env.ENCRYPT_SECRET;
+      const secretIV: string | undefined = options?.secretIV || process.env.ENCRYPT_SECRET_IV;
 
-      encryptionIV.copy(resizedIV)
+      if (!secret || !secretIV) return null;
 
-      const cipher = createCipheriv('aes256', key, resizedIV);
-      return (cipher.update(data, 'binary', 'hex') + cipher.final('hex'))
+      const { key, iv } = this.createIV(algorithm, secret, secretIV);
+
+      const cipher = createCipheriv('aes256', key, iv);
+
+      return cipher.update(data, 'binary', 'hex') + cipher.final('hex')
 
     } catch (error) {
       throw error;
     }
   }
 
-  public decrypt(data: string): string | null {
+  /**
+   * Decrypt
+   * -------
+   * decrypt data using crypto, for more complete information please visit the documentation page.
+   * 
+   * https://github.com/bitcodenetwork/secret
+   * 
+   * @param data data to decrypt
+   * @param options setting options for decryption: algorithm, secret, secretIV
+   * @returns decrypted data or null
+   */
+
+  public static decrypt(data: string, options?: { algorithm?: "sha256" | "sha512", secret?: string, secretIV?: string }): string | null {
     try {
 
       if (!data || data == 'null' || data == 'undefined') return null;
 
-      const key: Buffer = this.key();
-      const resizedIV: Buffer = this.resizedIV()
-      const encryptionIV: Buffer = this.encryptionIV();
+      const algorithm: "sha256" | "sha512" | null = options?.algorithm || "sha256";
+      const secret: string | undefined = options?.secret || process.env.ENCRYPT_SECRET;
+      const secretIV: string | undefined = options?.secretIV || process.env.ENCRYPT_SECRET_IV;
 
-      encryptionIV.copy(resizedIV)
+      if (!secret || !secretIV) return null;
 
-      const decipher = createDecipheriv('aes256', key, resizedIV);
-      return (decipher.update(data, 'hex', 'binary') + decipher.final('binary'))
+      const { key, iv } = this.createIV(algorithm, secret, secretIV);
+
+      const decipher = createDecipheriv('aes256', key, iv);
+
+      return decipher.update(data, 'hex', 'binary') + decipher.final('binary')
 
     } catch (error) {
       throw error;
     }
   }
 
-  public encode(data: string, type: "ascii" | "base64" | "base64url" | "binary" | "hex" | "latin1" | "ucs2" | "ucs-2" | "utf16le" | "utf-16le" | "utf8" | "utf-8" = "base64"): string | null {
+  /**
+   * Encode
+   * ------
+   * encode data to base64, base64url, hex, etc, for more complete information please visit the documentation page.
+   * 
+   * https://github.com/bitcodenetwork/secret
+   * 
+   * @param data data to encode
+   * @param type type of encoding
+   * @returns encoded data or null
+   */
+
+  public static encode(data: string, type: "ascii" | "base64" | "base64url" | "binary" | "hex" | "latin1" | "ucs2" | "ucs-2" | "utf16le" | "utf-16le" | "utf8" | "utf-8" = "base64"): string | null {
     return Buffer.from(data).toString(type);
   }
 
-  public decode(data: string, type: "ascii" | "base64" | "base64url" | "binary" | "hex" | "latin1" | "ucs2" | "ucs-2" | "utf16le" | "utf-16le" | "utf8" | "utf-8" = "base64"): string | null {
+  /**
+   * Decode
+   * ------
+   * decode data from base64, base64url, hex, etc, for more complete information please visit the documentation page.
+   * 
+   * https://github.com/bitcodenetwork/secret
+   * 
+   * @param data data to decode
+   * @param type type of decoding
+   * @returns decoded data or null
+   */
+
+  public static decode(data: string, type: "ascii" | "base64" | "base64url" | "binary" | "hex" | "latin1" | "ucs2" | "ucs-2" | "utf16le" | "utf-16le" | "utf8" | "utf-8" = "base64"): string | null {
     return Buffer.from(data, type).toString('ascii');
   }
 
-  public scrypt(data: string, options?: { salt?: string, type?: "hex" | "base64" | "base64url" }): string | null {
-    const type = options?.type || "base64";
-    const salt = options?.salt || randomBytes(5).toString("hex");
-    const encodedType = this.encode(type, "base64");
-    const encodedSalt = this.encode(salt, "base64");
+  /**
+   * SCrypt
+   * ------
+   * scrypt data using crypto, for more complete information please visit the documentation page.
+   * 
+   * https://github.com/bitcodenetwork/secret
+   * 
+   * @param data data to scrypt
+   * @param options setting options for scrypt: salt, type
+   * @returns scrypted data or null
+   */
+
+  public static scrypt(data: string, options?: { salt?: string, type?: "hex" | "base64" | "base64url" }): string | null {
+    const salt = options?.salt || process.env.SCRYPT_SALT;
+    const type = options?.type || "base64url";
+
+    if (!salt) return null;
+
+    const key = this.scryptKey(data, salt, type);
+    const hash = key;
+
+    return hash;
+  }
+
+  /**
+   * SCrypt Compare
+   * --------------
+   * compare scrypt data using crypto, for more complete information please visit the documentation page.
+   * 
+   * https://github.com/bitcodenetwork/secret
+   * 
+   * @param data data to compare
+   * @param hash hash to compare
+   * @param options setting options for scrypt: salt, type
+   * @returns is data equal to hash or null
+   */
+  public static scryptCompare(data: string, hash: string, options?: { salt?: string, type?: "hex" | "base64" | "base64url" }): boolean | null {
+    const salt = options?.salt || process.env.SCRYPT_SALT;
+    const type = options?.type || "base64url";
+
+    if (!salt) return null;
+
+    const comparedKey = this.scryptKey(data, salt, type ?? "base64url");
+
+    return comparedKey === hash;
+  }
+
+  /**
+   * SCrypt Auto
+   * -----------
+   * scrypt data using crypto, for more complete information please visit the documentation page.
+   * 
+   * https://github.com/bitcodenetwork/secret
+   * 
+   * @param data data to scrypt
+   * @param options setting options for scrypt: salt, type
+   * @returns scrypted data or null
+   */
+
+  public static scryptAuto(data: string, options?: { salt?: string, type?: "hex" | "base64" | "base64url" }): string | null {
+    const salt = options?.salt || process.env.SCRYPT_SALT || this.randomKey;
+    const type = options?.type || "base64url";
+
+    if (!salt) return null;
+
+    const encodedSalt = this.encode(salt, "base64url");
+    const encodedType = this.encode(type, "base64url");
+
     const key = this.scryptKey(data, salt, type);
     const hash = encodedType + "$" + encodedSalt + "$" + key;
 
     return hash;
   }
 
-  public scryptCompare(data: string, hash: string): boolean {
+  /**
+   * SCrypt Auto Compare
+   * -------------------
+   * compare scrypt data using crypto, for more complete information please visit the documentation page.
+   * 
+   * https://github.com/bitcodenetwork/secret
+   * 
+   * @param data data to compare
+   * @param hash hash to compare
+   * @returns is data equal to hash or null
+   */
+
+  public static scryptAutoCompare(data: string, hash: string): boolean | null {
     const [encodedType, encodedSalt, key] = hash.split("$");
-    const type: any = this.decode(encodedType, "base64");
-    const salt: any = this.decode(encodedSalt, "base64");
+
+    const salt: string | null = this.decode(encodedSalt, "base64url");
+    const type: "hex" | "base64" | "base64url" | null = this.decode(encodedType, "base64url") as "hex" | "base64" | "base64url" | null;
+
+    if (!salt || !type) return null;
 
     const comparedKey = this.scryptKey(data, salt, type);
 
     return comparedKey === key;
   }
 
-  private scryptKey(data: string, salt: string, type: "hex" | "base64" | "base64url"): string {
+  private static scryptKey(data: string, salt: string, type: "hex" | "base64" | "base64url"): string {
     const scryptOptions = {
       N: 2 ** 14,
       r: 8,
