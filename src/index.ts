@@ -9,8 +9,6 @@ import {
 class Secret {
   constructor() { }
 
-  private static randomKey = randomBytes(5).toString("hex");
-
   private static createIV(algorithmParam: "sha256" | "sha512", secretParam: string, secretIVParam: string) {
     const algorithm = algorithmParam;
     const secret = secretParam;
@@ -23,6 +21,21 @@ class Secret {
     encryptionIV.copy(iv);
 
     return { key, iv };
+  }
+
+  /**
+   * Random Bytes
+   * ------------
+   * generate random bytes using crypto, for more complete information please visit the documentation page.
+   * 
+   * https://github.com/bitcodenetwork/secret
+   * 
+   * @param randomBytesParam random bytes to generate
+   * @param type type of random bytes
+   * @returns random bytes
+   */
+  public static randomBytes(randomBytesParam: number = 5, type: "ascii" | "base64" | "base64url" | "binary" | "hex" | "latin1" | "ucs2" | "ucs-2" | "utf16le" | "utf-16le" | "utf8" | "utf-8" = "hex"): string {
+    return randomBytes(randomBytesParam).toString(type);
   }
 
   /**
@@ -184,7 +197,7 @@ class Secret {
    */
 
   public static scryptAuto(data: string, options?: { salt?: string, type?: "hex" | "base64" | "base64url" }): string | null {
-    const salt = options?.salt || process.env.SCRYPT_SALT || this.randomKey;
+    const salt = options?.salt || process.env.SCRYPT_SALT || this.randomBytes();
     const type = options?.type || "base64url";
 
     if (!salt) return null;
