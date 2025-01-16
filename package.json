@@ -1,5 +1,5 @@
 {
-  "name": "@bitcodenetwork/secret",
+  "name": "@bitcodenetwork/node-secret",
   "version": "0.1.0",
   "description": "Secret Library",
   "main": "./dist/index.js",
@@ -14,7 +14,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bitcodenetwork/secret.git"
+    "url": "git+https://github.com/bitcodenetwork/node-secret.git"
   },
   "keywords": [
     "secret",
@@ -24,11 +24,11 @@
     "crypto"
   ],
   "author": "Bit Code Network",
-  "license": "Apache-2.0 license",
+  "license": "SEE LICENSE IN LICENSE",
   "bugs": {
-    "url": "https://github.com/bitcodenetwork/secret/issues"
+    "url": "https://github.com/bitcodenetwork/node-secret/issues"
   },
-  "homepage": "https://github.com/bitcodenetwork/secret#readme",
+  "homepage": "https://github.com/bitcodenetwork/node-secret#readme",
   "packageManager": "yarn@1.22.22+sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610",
   "devDependencies": {
     "@types/jest": "^29.5.14",
