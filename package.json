@@ -1,5 +1,5 @@
 {
-  "name": "@bitcodenetwork/node-secret",
+  "name": "@bitcodenetwork/secret",
   "version": "0.1.0",
   "description": "Secret Library",
   "main": "./dist/index.js",
