@@ -7,10 +7,10 @@ To get started, simply add the package to your project using the following comma
 
 ``` bash
 # using npm
-npm install @bitcodenetwork/secret
+npm install @repoxcode/secret
 
 # using yarn
-yarn add @bitcodenetwork/secret
+yarn add @repoxcode/secret
 ```
 
 ### Encrypt and Decrypt
